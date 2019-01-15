@@ -1174,19 +1174,23 @@ func (b *ColListTableBuilder) GetRow(row int) values.Object {
 	record := values.NewObject()
 	var val values.Value
 	for j, col := range b.colMeta {
-		switch col.Type {
-		case flux.TBool:
-			val = values.NewBool(b.cols[j].(*boolColumnBuilder).data[row])
-		case flux.TInt:
-			val = values.NewInt(b.cols[j].(*intColumnBuilder).data[row])
-		case flux.TUInt:
-			val = values.NewUInt(b.cols[j].(*uintColumnBuilder).data[row])
-		case flux.TFloat:
-			val = values.NewFloat(b.cols[j].(*floatColumnBuilder).data[row])
-		case flux.TString:
-			val = values.NewString(b.cols[j].(*stringColumnBuilder).data[row])
-		case flux.TTime:
-			val = values.NewTime(b.cols[j].(*timeColumnBuilder).data[row])
+		if b.cols[j].IsNil(row) {
+			val = values.NewNull(flux.SemanticType(col.Type))
+		} else {
+			switch col.Type {
+			case flux.TBool:
+				val = values.NewBool(b.cols[j].(*boolColumnBuilder).data[row])
+			case flux.TInt:
+				val = values.NewInt(b.cols[j].(*intColumnBuilder).data[row])
+			case flux.TUInt:
+				val = values.NewUInt(b.cols[j].(*uintColumnBuilder).data[row])
+			case flux.TFloat:
+				val = values.NewFloat(b.cols[j].(*floatColumnBuilder).data[row])
+			case flux.TString:
+				val = values.NewString(b.cols[j].(*stringColumnBuilder).data[row])
+			case flux.TTime:
+				val = values.NewTime(b.cols[j].(*timeColumnBuilder).data[row])
+			}
 		}
 		record.Set(col.Label, val)
 	}
@@ -1421,6 +1425,7 @@ type columnBuilder interface {
 	Copy() column
 	Len() int
 	SetNil(i int, isNil bool)
+	IsNil(i int) bool
 	Equal(i, j int) bool
 	Less(i, j int) bool
 	Swap(i, j int)
@@ -1462,6 +1467,10 @@ func (c *boolColumnBuilder) SetNil(i int, isNil bool) {
 	} else {
 		delete(c.nils, i)
 	}
+}
+
+func (c *boolColumnBuilder) IsNil(i int) bool {
+	return c.nils[i]
 }
 
 func (c *boolColumnBuilder) Meta() flux.ColMeta {
@@ -1558,6 +1567,10 @@ func (c *intColumnBuilder) SetNil(i int, isNil bool) {
 	}
 }
 
+func (c *intColumnBuilder) IsNil(i int) bool {
+	return c.nils[i]
+}
+
 func (c *intColumnBuilder) Meta() flux.ColMeta {
 	return c.ColMeta
 }
@@ -1647,6 +1660,10 @@ func (c *uintColumnBuilder) SetNil(i int, isNil bool) {
 	} else {
 		delete(c.nils, i)
 	}
+}
+
+func (c *uintColumnBuilder) IsNil(i int) bool {
+	return c.nils[i]
 }
 
 func (c *uintColumnBuilder) Meta() flux.ColMeta {
@@ -1740,6 +1757,10 @@ func (c *floatColumnBuilder) SetNil(i int, isNil bool) {
 	}
 }
 
+func (c *floatColumnBuilder) IsNil(i int) bool {
+	return c.nils[i]
+}
+
 func (c *floatColumnBuilder) Meta() flux.ColMeta {
 	return c.ColMeta
 }
@@ -1831,6 +1852,10 @@ func (c *stringColumnBuilder) SetNil(i int, isNil bool) {
 	}
 }
 
+func (c *stringColumnBuilder) IsNil(i int) bool {
+	return c.nils[i]
+}
+
 func (c *stringColumnBuilder) Meta() flux.ColMeta {
 	return c.ColMeta
 }
@@ -1920,6 +1945,10 @@ func (c *timeColumnBuilder) SetNil(i int, isNil bool) {
 	} else {
 		delete(c.nils, i)
 	}
+}
+
+func (c *timeColumnBuilder) IsNil(i int) bool {
+	return c.nils[i]
 }
 
 func (c *timeColumnBuilder) Meta() flux.ColMeta {
